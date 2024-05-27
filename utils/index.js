@@ -1,6 +1,6 @@
-import dotenv from "dotenv";
 import { app } from "./app.js";
 import { mongodbConnection } from "../db/connection.js";
+import dotenv from "dotenv";
 dotenv.config({
     path: './.env'
 })
@@ -14,3 +14,6 @@ mongodbConnection(process.env.MONGO_URL);
 app.listen(port, () => {
     console.log("App is listening on port", port);
 });
+
+
+

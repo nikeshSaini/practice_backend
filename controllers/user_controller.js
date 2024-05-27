@@ -5,7 +5,7 @@ const registerUser = async (req, res) => {
     try {
         //get user detail from frontend
         const {username,email,fullName,password} = req.body;
-        console.log(userDetail);
+
 
         //validation-not empty or correct format
         if([fullName, email, password, username].some((field)=>
@@ -13,16 +13,18 @@ const registerUser = async (req, res) => {
             throw new Error("field is required");
         }
         //user already exist- email unique/username
-        const existedUser = User.findOne({
+        const existedUser =await User.findOne({
             $or: [{username}, {email}]
         })
         if(existedUser){
             throw new Error("User already existed");
         }
 
-        //images 
+        // console.log(req.files);
+        // Extract file paths for avatar and cover image from request
         const avatarLocalpath = req.files?.avatar[0]?.path;
-        const coverLocalpath = req.files?.cover[0]?.path;
+        const coverLocalpath = req.files?.coverImage[0]?.path;
+
 
         if(!avatarLocalpath){
             throw new Error("upload the avatar image");
@@ -49,7 +51,7 @@ const registerUser = async (req, res) => {
         })
         //remove the password and refresh token from response
 
-        const createdUser = await  User.findById(user._id).select(
+        const createdUser = await  User.findById(User._id).select(
             "-password -refereshToken"
         );
         // save to database
