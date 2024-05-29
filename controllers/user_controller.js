@@ -24,7 +24,12 @@ const registerUser = async (req, res) => {
         // console.log(req.files);
         // Extract file paths for avatar and cover image from request
         const avatarLocalpath = req.files?.avatar[0]?.path;
-        const coverLocalpath = req.files?.coverImage[0]?.path;
+        let coverLocalpath;
+
+        if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length>0){
+            coverLocalpath = req.files.coverImage[0].path;
+        }
+        // const coverLocalpath = req.files?.coverImage[0]?.path;
 
 
         if(!avatarLocalpath){
@@ -45,7 +50,7 @@ const registerUser = async (req, res) => {
         const userdata = await User.create({
             fullName,
             avatar: avatar.url,
-            coverimage:cover.url|| "",
+            coverImage: cover && cover.url ? cover.url : "",
             email,
             password,
             username:username.toLowerCase()
@@ -68,9 +73,11 @@ const registerUser = async (req, res) => {
     } catch (error) {
         console.error("Error registering user:", error);
         res.status(500).json({
-            error: "Internal Server Error"
+            message: "Error registering user",
+            error: error.message  // Send only the error message
         });
     }
+    
 };
 
 
