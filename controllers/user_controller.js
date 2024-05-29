@@ -1,5 +1,6 @@
 import {User} from "../models/user_model.js";
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
+import {ApiResponse} from "../utils/api_response.js";
 
 const registerUser = async (req, res) => {
     try {
@@ -51,13 +52,13 @@ const registerUser = async (req, res) => {
         })
         //remove the password and refresh token from response
 
-        const createdUser = await  User.findById(User._id).select(
+        const createdUser = await  User.findById(userdata._id).select(
             "-password -refereshToken"
         );
         // save to database
 
         if(!createdUser){
-            throw new Error("Somthing went wring while registing user");
+            throw new Error("Somthing went wrong while registing user");
         }
         //return response
 
