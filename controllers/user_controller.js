@@ -2,6 +2,23 @@ import {User} from "../models/user_model.js";
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import {ApiResponse} from "../utils/api_response.js";
 
+const generatedAccessandRefreshToken = async(userId)=>{
+    try {
+        let user = await User.findById(userId);
+        let accessToken = await user.generateAccessToken();
+        let refereshToken = await user.generateRefreshToken();
+        user.refereshToken = refereshToken;
+        await user.save({validateBeforeSave: false});
+
+
+        return {accessToken , refereshToken};
+    } catch (error) {
+        throw new Error(error.message);
+
+    }
+}
+
+
 const registerUser = async (req, res) => {
     try {
         //get user detail from frontend
@@ -81,25 +98,78 @@ const registerUser = async (req, res) => {
 };
 
 
-
-
-
-
-
-
 const loginUser = async(req,res)=>{
     try {
-        res.status(200).json({
-            message:"Login Successful"
-        })
+        //req.body
+        //checking the email 
+        //checking the email if present
+        // than check pass 
+        //creating the jwt  and referesh token generate
+        // both valid then access provide
+        //return response
+
+        const {email, password} = req.body;
+        // console.log("body:",req.body);
+        if(!email){
+            throw new Error("email is required");
+        }
+
+        const existedUser = await User.findOne({email});
+        if(!existedUser){
+            throw new Error("User doesn't existed");
+        }
+
+        const isPassValid = await existedUser.isPasswordCorrect(password);
+        if(!isPassValid){
+            throw new Error("Enter the correct password");
+        }
+        const{accessToken,refreshToken}= await generatedAccessandRefreshToken(existedUser._id);
+
+        const loggedinUser = await User.findById(existedUser._id).select("-password -refereshToken")
+        const options ={
+            httpOnly:true,//this ensure that its accessible via htttps not via frontend javascript
+            secure:true,
+        }//this line code ensure that credentials only passed through https connections
+
+        return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json({message: "logged in successfully:" , loggedinUser});
+
             
     } catch (error) {
-        console.log("login failed");
+        console.log(error);
         res.status(501).json({
             error:"login failed"
         })
     }
 }
 
+const logoutUser = async(req,res)=>{
+    User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set:{
+                refreshToken:undefined
+            }
+        },{
+            new:true
+        }
+    )
+    const options ={
+        httpOnly:true,//this ensure that its accessible via htttps not via frontend javascript
+        secure:true,
+    }//this line code ensure that credentials only passed through https connections
 
-export {registerUser,loginUser};
+    return res
+            .status(202)
+            .clearCookie("accessToken",options)
+            .clearCookie("refreshToken",options)
+            .json({
+                message:"Logout successfully"
+            })
+
+}
+
+export {registerUser,loginUser,logoutUser};
